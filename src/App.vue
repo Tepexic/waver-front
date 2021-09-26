@@ -104,7 +104,7 @@ export default {
       signer: null,
       waveportalContract: null,
       count: 0,
-      contractAdress: "0xA0950fc84c0E52f474Df100908e2E7f26E9bC500",
+      contractAdress: "0xeDE41cbbd29dF4daF214f0D905d0055Eef232FE5",
       mining: false,
       waveTxn: null,
       currentWave: "",
