@@ -159,7 +159,13 @@ export default {
       const count = await this.waveportalContract.functions.getTotalWaves();
       this.count = count.toString();
     },
-    async wave() {},
+    async wave() {
+      const waveTxn = await this.waveportalContract.functions.wave();
+      console.log("Mining...", waveTxn.hash);
+      await waveTxn.wait();
+      console.log("Mined -- ", waveTxn.hash);
+      this.getTotalWaves();
+    },
     getMetamask() {
       alert("Please get metamask");
     },
