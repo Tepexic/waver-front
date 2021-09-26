@@ -21,36 +21,47 @@
       </section>
 
       <section
-        class="bg-gradient-to-r from-yellow-300 to-pink-300 rounded py-6 text-purple-900 font-medium md:mx-0 px-4"
+        class="bg-gradient-to-r from-yellow-300 to-pink-300 rounded py-6 text-purple-900 font-medium md:mx-0 px-4 my-4"
       >
+        <div class="text-5xl font-extrabold ">
+          <span
+            class="bg-clip-text text-transparent bg-gradient-to-l from-yellow-700 to-pink-700 "
+          >
+            Total waves: {{ count }}
+          </span>
+        </div>
         <p class="my-6">
           Connect your wallet and send me a wave
           <span class="text-3xl">👋</span>
         </p>
         <button
           class="bg-purple-800 rounded px-10 py-4 text-white font-medium text-2xl hover:bg-purple-700 shadow-lg md:mx-0 w-full my-4"
+          @click="wave"
+          v-if="account"
         >
           Wave at Me 👋
         </button>
         <button
+          v-else
           class="bg-purple-800 rounded px-10 py-4 text-white font-medium text-2xl hover:bg-purple-700 shadow-lg md:mx-0 w-full"
           @click="connectWallet"
-          v-if="!account"
         >
           Connect Wallet
         </button>
       </section>
 
-      <section class="text-left mt-6 font-mono text-sm">
-        <p>Transaction console</p>
-        <div
-          class="bg-gradient-to-r from-green-800 to-green-900 rounded my-4 text-green-300 p-2"
-          v-for="(l, i) in log"
-          :key="`log${i}`"
-        >
-          <p>{{ l }}</p>
+      <!-- <section class="text-left mt-6 font-mono text-sm">
+        <p class="mb-2">Transaction console</p>
+        <div class="overflow-auto">
+          <div
+            class="bg-gradient-to-r from-green-800 to-green-900 text-green-100 p-2"
+            v-for="(l, i) in log"
+            :key="`log${i}`"
+          >
+            <span>{{ l }}</span>
+          </div>
         </div>
-      </section>
+      </section> -->
 
       <div class="text-xs md:mt-20">
         Special thanks to
@@ -63,7 +74,8 @@
 </template>
 
 <script>
-//import { ethers } from "ethers";
+import { ethers } from "ethers";
+import waveportal from "./utils/WavePortal.json";
 
 export default {
   name: "App",
@@ -73,6 +85,11 @@ export default {
       accounts: [],
       account: null,
       log: [],
+      provider: null,
+      signer: null,
+      waveportalContract: null,
+      count: 0,
+      contractAdress: "0xA0950fc84c0E52f474Df100908e2E7f26E9bC500",
     };
   },
   methods: {
@@ -83,15 +100,16 @@ export default {
       try {
         const { ethereum } = window;
         if (!ethereum) {
-          const message = "No Metamask detected!";
-          alert(message);
-          console.log(message);
+          this.getMetamask();
           return;
         } else {
           this.ethereum = ethereum;
-          console.log("We have the ethereum object", ethereum);
+          const log = "We have the ethereum object";
+          this.log.push(log);
+          console.log(log, ethereum);
         }
       } catch (e) {
+        this.log.push(e);
         console.error(e);
       }
     },
@@ -106,7 +124,7 @@ export default {
         let log;
         if (this.accounts.length) {
           this.account = this.accounts[0];
-          log = `Found an authorized account: {this.account}`;
+          log = `Found an authorized account: ${this.account}`;
           console.log(log);
           this.log.push(log);
         } else {
@@ -115,13 +133,41 @@ export default {
           console.log("No accounts found");
         }
       } else {
-        alert("Please get metamask");
+        this.getMetamask();
       }
     },
+    async connectContract() {
+      try {
+        if (this.ethereum) {
+          this.provider = new ethers.providers.Web3Provider(this.ethereum);
+          this.signer = this.provider.getSigner();
+          this.waveportalContract = new ethers.Contract(
+            this.contractAdress,
+            waveportal.abi,
+            this.signer
+          );
+          this.getTotalWaves();
+        } else {
+          this.getMetamask();
+        }
+      } catch (e) {
+        this.log.push(e);
+        console.error(e);
+      }
+    },
+    async getTotalWaves() {
+      const count = await this.waveportalContract.functions.getTotalWaves();
+      this.count = count.toString();
+    },
+    async wave() {},
+    getMetamask() {
+      alert("Please get metamask");
+    },
   },
-  created() {
+  async created() {
     document.title = "Ethereum Waver";
     this.checkIfWalletIsConnected();
+    await this.connectContract();
   },
 };
 </script>
