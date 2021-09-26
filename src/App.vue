@@ -20,7 +20,7 @@
       </section>
 
       <section
-        class="bg-gradient-to-r from-green-400 to-blue-400 rounded py-6 my-4 text-black font-medium mx-4 md:mx-0 "
+        class="bg-gradient-to-r from-green-300 to-blue-300 rounded py-6 my-4 text-green-900 font-medium mx-4 md:mx-0 px-4"
       >
         <p class="my-6">
           Connect your wallet and send me a wave
@@ -34,7 +34,10 @@
       </section>
     </div>
     <footer class="absolute bottom-2 text-xs w-full">
-      Mexico 2021
+      Special thanks to
+      <a href="https://buildspace.so/" target="_blank" class="font-semibold"
+        >Buildspace</a
+      >. Mexico 2021.
     </footer>
   </div>
 </template>
@@ -43,6 +46,9 @@
 export default {
   name: "App",
   components: {},
+  created() {
+    document.title = "Ethereum Waver";
+  },
 };
 </script>
 
