@@ -37,12 +37,23 @@
         <button
           class="bg-purple-800 rounded px-10 py-4 text-white font-medium text-2xl hover:bg-purple-700 shadow-lg md:mx-0 w-full my-4"
           @click="wave"
-          v-if="account"
+          v-if="account && !mining"
         >
           Wave at Me 👋
         </button>
+        <div
+          class="bg-purple-800 rounded px-10 py-4 text-white font-medium text-2xl hover:bg-purple-700 shadow-lg md:mx-0 w-full my-4"
+          v-if="mining"
+        >
+          <svg viewBox="0 0 24 24" class="animate-bounce h-10 w-10 mx-auto">
+            <path
+              fill="currentColor"
+              d="M14.79,10.62L3.5,21.9L2.1,20.5L13.38,9.21L14.79,10.62M19.27,7.73L19.86,7.14L19.07,6.35L19.71,5.71L18.29,4.29L17.65,4.93L16.86,4.14L16.27,4.73C14.53,3.31 12.57,2.17 10.47,1.37L9.64,3.16C11.39,4.08 13,5.19 14.5,6.5L14,7L17,10L17.5,9.5C18.81,11 19.92,12.61 20.84,14.36L22.63,13.53C21.83,11.43 20.69,9.47 19.27,7.73Z"
+            />
+          </svg>
+        </div>
         <button
-          v-else
+          v-if="!account"
           class="bg-purple-800 rounded px-10 py-4 text-white font-medium text-2xl hover:bg-purple-700 shadow-lg md:mx-0 w-full"
           @click="connectWallet"
         >
@@ -90,6 +101,7 @@ export default {
       waveportalContract: null,
       count: 0,
       contractAdress: "0xA0950fc84c0E52f474Df100908e2E7f26E9bC500",
+      mining: false,
     };
   },
   methods: {
@@ -161,9 +173,13 @@ export default {
     },
     async wave() {
       const waveTxn = await this.waveportalContract.functions.wave();
+      this.mining = true;
+      this.log.push("Mining...", waveTxn.hash);
       console.log("Mining...", waveTxn.hash);
       await waveTxn.wait();
       console.log("Mined -- ", waveTxn.hash);
+      this.log.push("Mined -- ", waveTxn.hash);
+      this.mining = false;
       this.getTotalWaves();
     },
     getMetamask() {
