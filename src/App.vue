@@ -34,13 +34,30 @@
           Connect your wallet and send me a wave
           <span class="text-3xl">👋</span>
         </p>
-        <button
-          class="bg-purple-800 rounded px-10 py-4 text-white font-medium text-2xl hover:bg-purple-700 shadow-lg md:mx-0 w-full my-4"
-          @click="wave"
+        <form
+          @submit.prevent="wave"
+          class="flex items-center text-2xl"
           v-if="account && !mining"
         >
-          Wave at Me 👋
-        </button>
+          <input
+            type="text"
+            placeholder="hey there!"
+            maxlength="140"
+            class="p-4 rounded text-purple-700 w-4/5 mr-2 md:mr-4"
+            :class="currentWave ? 'border-solid border-red-600' : 'border-none'"
+            v-model="currentWave"
+          />
+          <button
+            class="bg-purple-800 rounded p-4 text-white font-medium hover:bg-purple-700 w-1/5 h-full"
+            @click="wave"
+            type="submit"
+          >
+            👋
+          </button>
+        </form>
+        <p v-if="account && !currentWave" class="text-xs text-left mt-1">
+          Please provide a message
+        </p>
         <div
           class="bg-purple-800 rounded px-10 py-4 text-white font-medium text-2xl hover:bg-purple-700 shadow-lg md:mx-0 w-full my-4"
           v-if="mining"
@@ -61,19 +78,6 @@
         </button>
       </section>
 
-      <!-- <section class="text-left mt-6 font-mono text-sm">
-        <p class="mb-2">Transaction console</p>
-        <div class="h-40">
-          <div
-            class="bg-gradient-to-r from-green-800 to-green-900 text-green-100 p-2"
-            v-for="(l, i) in log"
-            :key="`log${i}`"
-          >
-            <span>{{ l }}</span>
-          </div>
-        </div>
-      </section> -->
-
       <div class="text-xs md:mt-20">
         Special thanks to
         <a href="https://buildspace.so/" target="_blank" class="font-semibold"
@@ -81,22 +85,6 @@
         >. Mexico 2021.
       </div>
     </div>
-
-    <!-- <div
-      class="absolute top-2 md:top-4 right-2 md:right-4 py-2 px-4 bg-pink-100 text-purple-900 rounded transition duration-500 ease-in-out flex items-center"
-    >
-      <span class="mr-4">¡Hola!👋 Thanks for passing by!</span>
-      <button
-        class="rounded bg-purple-800 text-white p-1 hover:bg-purple-700 shadow-lg"
-      >
-        <svg class="h-4 w-4" viewBox="0 0 24 24">
-          <path
-            fill="currentColor"
-            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-          />
-        </svg>
-      </button>
-    </div> -->
   </div>
 </template>
 
@@ -119,6 +107,7 @@ export default {
       contractAdress: "0xA0950fc84c0E52f474Df100908e2E7f26E9bC500",
       mining: false,
       waveTxn: null,
+      currentWave: "",
     };
   },
   methods: {
@@ -190,15 +179,19 @@ export default {
       this.count = count.toString();
     },
     async wave() {
-      const waveTxn = await this.waveportalContract.functions.wave();
-      this.mining = true;
-      this.log.push("Mining...", waveTxn.hash);
-      console.log("Mining...", waveTxn.hash);
-      await waveTxn.wait();
-      console.log("Mined -- ", waveTxn.hash);
-      this.log.push("Mined -- ", waveTxn.hash);
-      this.mining = false;
-      this.getTotalWaves();
+      if (this.currentWave) {
+        const waveTxn = await this.waveportalContract.functions.wave(
+          this.currentWave
+        );
+        this.mining = true;
+        this.log.push("Mining...", waveTxn.hash);
+        console.log("Mining...", waveTxn.hash);
+        await waveTxn.wait();
+        console.log("Mined -- ", waveTxn.hash);
+        this.log.push("Mined -- ", waveTxn.hash);
+        this.mining = false;
+        this.getTotalWaves();
+      }
     },
     getMetamask() {
       alert("Please get metamask");
