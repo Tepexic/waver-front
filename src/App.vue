@@ -63,7 +63,7 @@
 
       <!-- <section class="text-left mt-6 font-mono text-sm">
         <p class="mb-2">Transaction console</p>
-        <div class="overflow-auto">
+        <div class="h-40">
           <div
             class="bg-gradient-to-r from-green-800 to-green-900 text-green-100 p-2"
             v-for="(l, i) in log"
@@ -102,6 +102,7 @@ export default {
       count: 0,
       contractAdress: "0xA0950fc84c0E52f474Df100908e2E7f26E9bC500",
       mining: false,
+      waveTxn: null,
     };
   },
   methods: {
@@ -139,6 +140,9 @@ export default {
           log = `Found an authorized account: ${this.account}`;
           console.log(log);
           this.log.push(log);
+          if (!this.waveportalContract) {
+            this.connectContract();
+          }
         } else {
           log = "No accounts found";
           this.log.push(log);
@@ -150,7 +154,7 @@ export default {
     },
     async connectContract() {
       try {
-        if (this.ethereum) {
+        if (this.ethereum && this.account) {
           this.provider = new ethers.providers.Web3Provider(this.ethereum);
           this.signer = this.provider.getSigner();
           this.waveportalContract = new ethers.Contract(
@@ -159,8 +163,6 @@ export default {
             this.signer
           );
           this.getTotalWaves();
-        } else {
-          this.getMetamask();
         }
       } catch (e) {
         this.log.push(e);
