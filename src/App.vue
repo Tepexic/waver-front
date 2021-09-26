@@ -63,7 +63,7 @@
 
       <!-- <section class="text-left mt-6 font-mono text-sm">
         <p class="mb-2">Transaction console</p>
-        <div class="overflow-auto">
+        <div class="h-40">
           <div
             class="bg-gradient-to-r from-green-800 to-green-900 text-green-100 p-2"
             v-for="(l, i) in log"
@@ -81,6 +81,22 @@
         >. Mexico 2021.
       </div>
     </div>
+
+    <!-- <div
+      class="absolute top-2 md:top-4 right-2 md:right-4 py-2 px-4 bg-pink-100 text-purple-900 rounded transition duration-500 ease-in-out flex items-center"
+    >
+      <span class="mr-4">¡Hola!👋 Thanks for passing by!</span>
+      <button
+        class="rounded bg-purple-800 text-white p-1 hover:bg-purple-700 shadow-lg"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+          />
+        </svg>
+      </button>
+    </div> -->
   </div>
 </template>
 
@@ -102,6 +118,7 @@ export default {
       count: 0,
       contractAdress: "0xA0950fc84c0E52f474Df100908e2E7f26E9bC500",
       mining: false,
+      waveTxn: null,
     };
   },
   methods: {
@@ -139,6 +156,9 @@ export default {
           log = `Found an authorized account: ${this.account}`;
           console.log(log);
           this.log.push(log);
+          if (!this.waveportalContract) {
+            this.connectContract();
+          }
         } else {
           log = "No accounts found";
           this.log.push(log);
@@ -150,7 +170,7 @@ export default {
     },
     async connectContract() {
       try {
-        if (this.ethereum) {
+        if (this.ethereum && this.account) {
           this.provider = new ethers.providers.Web3Provider(this.ethereum);
           this.signer = this.provider.getSigner();
           this.waveportalContract = new ethers.Contract(
@@ -159,8 +179,6 @@ export default {
             this.signer
           );
           this.getTotalWaves();
-        } else {
-          this.getMetamask();
         }
       } catch (e) {
         this.log.push(e);
