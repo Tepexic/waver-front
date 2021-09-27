@@ -31,7 +31,11 @@
           </span>
         </div>
         <p class="my-6">
-          Connect your wallet and send me a wave
+          {{
+            !account
+              ? "Connect your wallet and send me a wave "
+              : `Each wave gives you the chance of winning 0.001 rETH `
+          }}
           <span class="text-3xl">👋</span>
         </p>
         <form
@@ -49,7 +53,7 @@
           />
           <button
             class="bg-purple-800 rounded p-4 text-white font-medium hover:bg-purple-700 w-1/5 h-full"
-            @click="wave"
+            @submit.prevent="wave"
             type="submit"
           >
             👋
@@ -78,6 +82,36 @@
         </button>
       </section>
 
+      <section
+        class="bg-gradient-to-r from-yellow-300 to-pink-300 rounded py-6 px-4 mt-8 overflow-auto"
+        v-if="account"
+      >
+        <div class="text-3xl font-bold ">
+          <span
+            class="bg-clip-text text-transparent bg-gradient-to-l from-yellow-700 to-pink-700 "
+          >
+            Previous messages:
+          </span>
+        </div>
+        <table class="table-auto bg-purple-900 rounded text-black w-full mt-6">
+          <tbody>
+            <tr
+              v-for="(w, i) in listOfWaves"
+              :key="`${w.waver}-${i}`"
+              :class="
+                i % 2 === 0
+                  ? 'bg-gradient-to-r  from-pink-400 to-pink-300'
+                  : 'bg-gradient-to-l from-yellow-400 to-yellow-300'
+              "
+            >
+              <td class="px-4 py-2 truncate rounded">
+                {{ w.message }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
       <div class="text-xs md:mt-20">
         Special thanks to
         <a href="https://buildspace.so/" target="_blank" class="font-semibold"
@@ -99,15 +133,15 @@ export default {
       ethereum: null,
       accounts: [],
       account: null,
-      log: [],
       provider: null,
       signer: null,
       waveportalContract: null,
       count: 0,
-      contractAdress: "0xeDE41cbbd29dF4daF214f0D905d0055Eef232FE5",
+      contractAddress: "0xd285Dcf87f0665b464cC9b75423E662d7B937A91",
       mining: false,
       waveTxn: null,
       currentWave: "",
+      listOfWaves: [],
     };
   },
   methods: {
@@ -123,11 +157,9 @@ export default {
         } else {
           this.ethereum = ethereum;
           const log = "We have the ethereum object";
-          this.log.push(log);
           console.log(log, ethereum);
         }
       } catch (e) {
-        this.log.push(e);
         console.error(e);
       }
     },
@@ -139,19 +171,16 @@ export default {
         this.accounts = await this.ethereum.request({
           method: "eth_requestAccounts",
         });
-        let log;
         if (this.accounts.length) {
           this.account = this.accounts[0];
-          log = `Found an authorized account: ${this.account}`;
-          console.log(log);
-          this.log.push(log);
+          console.log(`Found an authorized account: ${this.account}`);
           if (!this.waveportalContract) {
             this.connectContract();
           }
+          this.$vToastify.success("Wallet connected");
         } else {
-          log = "No accounts found";
-          this.log.push(log);
           console.log("No accounts found");
+          this.$vToastify.error("No accounts found");
         }
       } else {
         this.getMetamask();
@@ -163,35 +192,51 @@ export default {
           this.provider = new ethers.providers.Web3Provider(this.ethereum);
           this.signer = this.provider.getSigner();
           this.waveportalContract = new ethers.Contract(
-            this.contractAdress,
+            this.contractAddress,
             waveportal.abi,
             this.signer
           );
           this.getTotalWaves();
+          this.getWaves();
+          this.provider.on("NewWave", (from, timestamp, message) => {
+            console.log(from, timestamp, message);
+          });
         }
       } catch (e) {
-        this.log.push(e);
         console.error(e);
       }
     },
     async getTotalWaves() {
-      const count = await this.waveportalContract.functions.getTotalWaves();
-      this.count = count.toString();
+      try {
+        const count = await this.waveportalContract.getTotalWaves();
+        this.count = count.toString();
+      } catch (e) {
+        console.error(e);
+      }
     },
     async wave() {
-      if (this.currentWave) {
-        const waveTxn = await this.waveportalContract.functions.wave(
-          this.currentWave
-        );
-        this.mining = true;
-        this.log.push("Mining...", waveTxn.hash);
-        console.log("Mining...", waveTxn.hash);
-        await waveTxn.wait();
-        console.log("Mined -- ", waveTxn.hash);
-        this.log.push("Mined -- ", waveTxn.hash);
+      try {
+        if (this.currentWave) {
+          const waveTxn = await this.waveportalContract.wave(this.currentWave, {
+            gasLimit: 300000,
+          });
+          this.mining = true;
+          console.log("Mining...", waveTxn.hash);
+          await waveTxn.wait();
+          console.log("Mined -- ", waveTxn.hash);
+          this.mining = false;
+          this.getTotalWaves();
+          this.getWaves();
+          this.currentWave = "";
+        }
+      } catch (e) {
         this.mining = false;
-        this.getTotalWaves();
+        console.error(e);
+        this.$vToastify.error("Please wait 15 minutes to send another message");
       }
+    },
+    async getWaves() {
+      this.listOfWaves = await this.waveportalContract.getWaves();
     },
     getMetamask() {
       alert("Please get metamask");
